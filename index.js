@@ -1,9 +1,15 @@
+module.exports = {
+    log: message => console.log(`[LOG] ${message}`),
+    error: message => console.error(`[ERREUR] ${message}`),
+};
+
 const { Telegraf } = require('telegraf');
 const fs = require('fs');
 const express = require('express');
 const path = require('path');
 const axios = require('axios');
 
+// Charger le token du bot
 const tokenPath = path.resolve(__dirname, 'account.dev.txt');
 const token = fs.readFileSync(tokenPath, 'utf-8').trim();
 
@@ -17,7 +23,16 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const URL = process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`;
 
+// Charger dynamiquement toutes les commandes du dossier "commands"
+const commandsPath = path.join(__dirname, 'commands');
+fs.readdirSync(commandsPath).forEach(file => {
+    if (file.endsWith('.js')) {
+        const command = require(path.join(commandsPath, file));
+        command(bot);
+    }
+});
 
+// Ajouter des commandes au menu Telegram
 bot.telegram.setMyCommands([
     { command: 'start', description: 'Démarrer le bot' },
     { command: 'help', description: 'Afficher l\'aide' },
@@ -26,51 +41,23 @@ bot.telegram.setMyCommands([
     { command: 'getid', description: 'Obtenir votre ID utilisateur Telegram' },
     { command: 'ai', description: 'Interroger l\'IA' },
     { command: 'admin', description: 'Commandes administratives (pour admin seulement)' },
+    { command: 'spotify', description: 'Rechercher des informations sur Spotify' },
+    { command: 'lyrics', description: 'Obtenir les paroles d\'une chanson' },
 ]).then(() => {
     console.log('✅ Commandes ajoutées avec succès au menu du bot.');
 });
 
-
+// Servir des fichiers statiques
 app.use(express.static(path.join(__dirname, 'public')));
 
-
+// Route principale
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-
-bot.command('start', (ctx) => {
-    ctx.reply('Bienvenue ! Je suis votre bot Telegram. Utilisez /help pour voir toutes les commandes disponibles.');
-});
-
-bot.command('help', (ctx) => {
-    ctx.reply('Voici une liste des commandes disponibles :\n' +
-        '/start - Démarrer le bot\n' +
-        '/help - Afficher l\'aide\n' +
-        '/translate - Traduire un texte\n' +
-        '/imgbb - Uploader une image sur IMGBB\n' +
-        '/getid - Obtenir votre ID utilisateur Telegram\n' +
-        '/ai - Interroger l\'IA\n' +
-        '/admin - Commandes administratives (pour admin seulement)');
-});
-
-bot.command('translate', (ctx) => {
-    ctx.reply('Veuillez entrer le texte que vous souhaitez traduire.');
-});
-
-bot.command('imgbb', (ctx) => {
-    ctx.reply('Envoyez une image à uploader sur IMGBB.');
-});
-
-bot.command('getid', (ctx) => {
-    ctx.reply(`Votre ID utilisateur est : ${ctx.from.id}`);
-});
-
-bot.command('ai', async (ctx) => {
-    const prompt = ctx.message.text.split(' ').slice(1).join(' ');
-    if (!prompt) {
-        return ctx.reply('Veuillez fournir une question ou un texte à analyser.');
-    }
+// Gérer les messages texte
+bot.on('text', async (ctx) => {
+    const prompt = ctx.message.text;
 
     try {
         const { data: { response } } = await axios.get(`https://kaiz-apis.gleeze.com/api/gpt-4o?q=${encodeURIComponent(prompt)}&uid=${ctx.from.id}`); // thank you kaiz
@@ -89,40 +76,11 @@ bot.command('ai', async (ctx) => {
     }
 });
 
-bot.command('admin', (ctx) => {
-    if (ctx.from.id !== 123456789) { // Remplacez 123456789 par votre ID Telegram
-        return ctx.reply('❌ Vous n\'êtes pas autorisé à utiliser cette commande.');
-    }
-    ctx.reply('Bienvenue, admin. Que souhaitez-vous faire ?');
-});
-
-
-bot.on('text', async (ctx) => {
-    const prompt = ctx.message.text;
-    const senderId = ctx.from.id;
-
-    try {
-        const { data: { response } } = await axios.get(`https://kaiz-apis.gleeze.com/api/gpt-4o?q=${encodeURIComponent(prompt)}&uid=${senderId}`); // thank you kaiz
-
-        const parts = [];
-        for (let i = 0; i < response.length; i += 1999) {
-            parts.push(response.substring(i, i + 1999));
-        }
-
-        for (const part of parts) {
-            await ctx.reply(part);
-        }
-    } catch (error) {
-        ctx.reply('Une erreur est survenue lors de la génération de la réponse. Veuillez réessayer plus tard.');
-        console.error('Erreur lors de l\'appel à l\'API GPT-4o:', error.message);
-    }
-});
-
-
+// Configurer le webhook
 bot.telegram.setWebhook(`${URL}/bot${token}`);
 app.use(bot.webhookCallback(`/bot${token}`));
 
-
+// Démarrer le serveur
 app.listen(PORT, () => {
     console.log(`
 0%   ▒▒▒▒▒▒▒▒▒▒
