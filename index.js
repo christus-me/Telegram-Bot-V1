@@ -4,7 +4,6 @@ const express = require('express');
 const path = require('path');
 const axios = require('axios');
 
-// Récupérer le token du bot depuis le fichier
 const tokenPath = path.resolve(__dirname, 'account.dev.txt');
 const token = fs.readFileSync(tokenPath, 'utf-8').trim();
 
@@ -18,7 +17,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const URL = process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`;
 
-// Ajouter les commandes au menu Telegram
+
 bot.telegram.setMyCommands([
     { command: 'start', description: 'Démarrer le bot' },
     { command: 'help', description: 'Afficher l\'aide' },
@@ -31,15 +30,15 @@ bot.telegram.setMyCommands([
     console.log('✅ Commandes ajoutées avec succès au menu du bot.');
 });
 
-// Servir des fichiers statiques
+
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Route principale
+
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Ajouter des gestionnaires pour chaque commande
+
 bot.command('start', (ctx) => {
     ctx.reply('Bienvenue ! Je suis votre bot Telegram. Utilisez /help pour voir toutes les commandes disponibles.');
 });
