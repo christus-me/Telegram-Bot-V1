@@ -9,7 +9,6 @@ const express = require('express');
 const path = require('path');
 const axios = require('axios');
 
-// Charger le token du bot
 const tokenPath = path.resolve(__dirname, 'account.dev.txt');
 const token = fs.readFileSync(tokenPath, 'utf-8').trim();
 
@@ -23,7 +22,6 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const URL = process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`;
 
-// Charger dynamiquement toutes les commandes du dossier "commands"
 const commandsPath = path.join(__dirname, 'commands');
 fs.readdirSync(commandsPath).forEach(file => {
     if (file.endsWith('.js')) {
@@ -32,7 +30,6 @@ fs.readdirSync(commandsPath).forEach(file => {
     }
 });
 
-// Ajouter des commandes au menu Telegram
 bot.telegram.setMyCommands([
     { command: 'start', description: 'Démarrer le bot' },
     { command: 'help', description: 'Afficher l\'aide' },
@@ -41,21 +38,17 @@ bot.telegram.setMyCommands([
     { command: 'getid', description: 'Obtenir votre ID utilisateur Telegram' },
     { command: 'ai', description: 'Interroger l\'IA' },
     { command: 'admin', description: 'Commandes administratives (pour admin seulement)' },
-    { command: 'spotify', description: 'Rechercher des informations sur Spotify' },
-    { command: 'lyrics', description: 'Obtenir les paroles d\'une chanson' },
+    
 ]).then(() => {
     console.log('✅ Commandes ajoutées avec succès au menu du bot.');
 });
 
-// Servir des fichiers statiques
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Route principale
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Gérer les messages texte
 bot.on('text', async (ctx) => {
     const prompt = ctx.message.text;
 
@@ -76,11 +69,9 @@ bot.on('text', async (ctx) => {
     }
 });
 
-// Configurer le webhook
 bot.telegram.setWebhook(`${URL}/bot${token}`);
 app.use(bot.webhookCallback(`/bot${token}`));
 
-// Démarrer le serveur
 app.listen(PORT, () => {
     console.log(`
 0%   ▒▒▒▒▒▒▒▒▒▒
