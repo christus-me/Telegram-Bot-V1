@@ -1,23 +1,35 @@
+const { Markup } = require('telegraf');
+
 module.exports = (bot) => {
     bot.command('help', (ctx) => {
         const commands = [
-            { command: '/ai', description: 'poser des questions' },
-            { command: '/help', description: 'Afficher cette liste des commandes' },
-            { command: '/admin', description: 'Voir la liste des administrateurs' },
-            { command: '/addadmin <ID>', description: 'Ajouter un adminins' },
-            { command: '/removeadmin <ID>', description: 'Retirer un admins' },
-            { command: '/translate <langue_source> <langue_cible> <texte>', description: 'Traduire vos textes dans tous les langues que vous souhaitez 🌐' },
-            { command: '/start', description: 'démarrage du bot' },
-            { command: '/getid', description: 'Obtenez votre ID Telegram' },
-            { command: '/imgbb', description: 'transforme les photos en lien' },
-       
+            { command: '/ai', description: '🤖 ai' },
+            { command: '/help', description: 'ℹ️ help' },
+            { command: '/admin', description: '🤴🏽admin' },
+            { command: '/addadmin', description: '➕Ajouter un admin' },
+            { command: '/removeadmin', description: '➖Retirer un admin' },
+            { command: '/translate', description: 'Translate' },
+            { command: '/getid', description: '🆔 ID Telegram' },
+            { command: '/imgbb', description: ' 🏞️ imgbb 🔗' },
+            { command: '/start', description: '🔹Demarrer🔸' },
         ];
 
-        let message = '📜 **Liste des commandes disponibles :**\n\n';
-        commands.forEach(cmd => {
-            message += `╭─❍\n│ ✧${cmd.command} \n│- ${cmd.description}\n╰─━━━━━━━━━━━━━╾─◊\n`;
-        });
+        // Création des boutons inline
+        const buttons = commands.map(cmd => [Markup.button.callback(cmd.description, cmd.command)]);
 
-        ctx.replyWithMarkdown(message);
+        // Réponse avec un texte d'information et des boutons inline
+        ctx.reply(
+            '📜 *Liste des commandes disponibles :*',
+            Markup.inlineKeyboard(buttons) // Affichage des boutons
+        );
+    });
+
+    // Gérer les interactions avec les boutons inline
+    bot.action(/\/.*/, (ctx) => {
+        ctx.answerCbQuery(); // Ferme la notification du bouton
+
+        const command = ctx.match[0]; // récupère la commande associée au bouton
+        // Affiche la commande cliquée
+        ctx.reply(`*COMMANDE*\n╭──━━━\n├─ ${command}\n╰──━━━`);
     });
 };
